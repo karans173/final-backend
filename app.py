@@ -69,22 +69,29 @@ def handle_stock():
         # 4. Run Gemini summary + Sentiment
         print("🧠 Analyzing sentiment from Gemini news summary...")
         news = get_news_summary(stock, symbol)
-        sentiment_result = analyze_text_file_sentiment("generated_text.txt")
+        supabase_url = "https://rizamamuiwyyplawssvr.supabase.co/storage/v1/object/public/news-summary/generated_text.txt"
+        sentiment_result = analyze_text_file_sentiment("generated_text.txt", supabase_url=supabase_url)
+
         if sentiment_result is None or "error" in sentiment_result:
             print("❌ Sentiment analysis failed.")
             print(f"🪵 Reason: {sentiment_result.get('error', 'Unknown error')}")
             print(f"📍 Error Stage: {sentiment_result.get('stage', 'Unknown')}")
-        response["sentiment_analysis"] = {
-            "overall_sentiment": sentiment_result["overall_sentiment"],
-            "positive_ratio": sentiment_result["positive_ratio"],
-            "avg_sentiment_score": sentiment_result["avg_sentiment_score"]
-        }
+            response["sentiment_analysis"] = {
+                "error": sentiment_result.get("error"),
+                "stage": sentiment_result.get("stage")
+            }
+        else:
+            response["sentiment_analysis"] = {
+                "overall_sentiment": sentiment_result["overall_sentiment"],
+                "positive_ratio": sentiment_result["positive_ratio"],
+                "avg_sentiment_score": sentiment_result["avg_sentiment_score"]
+            }
 
-        # 5. Generate trading signals (uses sentiment + moving averages)
-        print("⚙️ Generating trading signals...")
-        price_data = {symbol: df}
-        signal = generate_trading_signals(price_data, sentiment_result, risk_profile=risk_level)
-        response["trading_signal"] = signal[symbol]
+            # 5. Generate trading signals (uses sentiment + moving averages)
+            print("⚙️ Generating trading signals...")
+            price_data = {symbol: df}
+            signal = generate_trading_signals(price_data, sentiment_result, risk_profile=risk_level)
+            response["trading_signal"] = signal[symbol]
 
         response_clean = convert_types(response)
         print(response_clean)
