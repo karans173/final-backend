@@ -58,6 +58,8 @@ def generate_trading_signals(price_data, sentiment_result, risk_profile='moderat
     Generate trading signals based on technical indicators and sentiment analysis
     """
     sentiment_score = sentiment_result['normalized_sentiment']
+    if sentiment_score is None:
+        raise ValueError("Missing 'normalized_sentiment' in sentiment_result")
     
     risk_weights = {
         'conservative': {'technical': 0.8, 'sentiment': 0.2},
