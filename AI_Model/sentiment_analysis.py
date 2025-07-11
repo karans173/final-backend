@@ -1,6 +1,9 @@
 import pandas as pd
 from supabase import create_client
 from transformers import pipeline
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzA3MDIsImV4cCI6MjA2NzcwNjcwMn0.Qfno-pgz05Fjs0_K5WKMLdUFtVeg-NuNVoZhPIwLjvg"
