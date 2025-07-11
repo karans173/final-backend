@@ -71,9 +71,9 @@ def handle_stock():
         news = get_news_summary(stock, symbol)
         sentiment_result = analyze_text_file_sentiment("generated_text.txt")
         if sentiment_result is None or "error" in sentiment_result:
-        print("❌ Sentiment analysis failed.")
-        print(f"🪵 Reason: {sentiment_result.get('error', 'Unknown error')}")
-        print(f"📍 Error Stage: {sentiment_result.get('stage', 'Unknown')}")
+            print("❌ Sentiment analysis failed.")
+            print(f"🪵 Reason: {sentiment_result.get('error', 'Unknown error')}")
+            print(f"📍 Error Stage: {sentiment_result.get('stage', 'Unknown')}")
         response["sentiment_analysis"] = {
             "overall_sentiment": sentiment_result["overall_sentiment"],
             "positive_ratio": sentiment_result["positive_ratio"],
