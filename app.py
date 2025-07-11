@@ -69,7 +69,7 @@ def handle_stock():
         # 4. Run Gemini summary + Sentiment
         print("🧠 Analyzing sentiment from Gemini news summary...")
         news = get_news_summary(stock, symbol)
-        sentiment_result = analyze_text_file_sentiment("generated_text.txt")
+        sentiment_result = analyze_text_file_sentiment(news)
         if sentiment_result is None or "error" in sentiment_result:
             print("❌ Sentiment analysis failed.")
             print(f"🪵 Reason: {sentiment_result.get('error', 'Unknown error')}")
