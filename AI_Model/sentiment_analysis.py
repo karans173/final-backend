@@ -18,8 +18,8 @@ def get_sentiment_analyzer():
             print("🤖 Initializing sentiment analysis pipeline...")
             sentiment_analyzer = pipeline(
                 "sentiment-analysis",
-                model="distilbert-base-uncased-finetuned-sst-2-english",
-                
+                model="./models/distilbert-sst2",
+                tokenizer="./models/distilbert-sst2"
             )
             print("✅ Model pipeline loaded successfully.")
         except Exception as e:
