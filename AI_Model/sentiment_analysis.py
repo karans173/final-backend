@@ -42,7 +42,8 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
         print("🤖 Initializing sentiment analysis pipeline...")
         sentiment_analyzer = pipeline(
             "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english"
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            local_files_only=True
         )
     except Exception as e:
         print(f"❌ Pipeline Initialization Error: {e}")
