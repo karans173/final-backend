@@ -69,9 +69,7 @@ def handle_stock():
         # 4. Run Gemini summary + Sentiment
         print("🧠 Analyzing sentiment from Gemini news summary...")
         news = get_news_summary(stock, symbol)
-        sentiment_result = analyze_text_file_sentiment("generated_text.txt")
-        if not sentiment_result or "normalized_sentiment" not in sentiment_result:
-         raise ValueError("Sentiment analysis failed or missing 'normalized_sentiment'")
+        sentiment_result = analyze_text_file_sentiment(news)
         response["sentiment_analysis"] = {
             "overall_sentiment": sentiment_result["overall_sentiment"],
             "positive_ratio": sentiment_result["positive_ratio"],
