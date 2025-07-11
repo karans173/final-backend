@@ -6,8 +6,8 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 sentiment_analyzer = None
 
-SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzA3MDIsImV4cCI6MjA2NzcwNjcwMn0.Qfno-pgz05Fjs0_K5WKMLdUFtVeg-NuNVoZhPIwLjvg"
+SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co".strip()
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzA3MDIsImV4cCI6MjA2NzcwNjcwMn0.Qfno-pgz05Fjs0_K5WKMLdUFtVeg-NuNVoZhPIwLjvg".strip()
 BUCKET_NAME = "news-summary"
 FILE_NAME = "generated_text.txt"
 
@@ -27,27 +27,36 @@ def get_sentiment_analyzer():
             return None
     return sentiment_analyzer
 
-def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
+def analyze_text_file_sentiment(file_name: str = None, content: str = None):
     from supabase import create_client
     import os
 
-    SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co"
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjEzMDcwMiwiZXhwIjoyMDY3NzA2NzAyfQ.RYVgSqjNiHcWWTrhrmUl5BuCBxiZeZjfQwo3pI3EjFw"
+    SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co".strip()
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjEzMDcwMiwiZXhwIjoyMDY3NzA2NzAyfQ.RYVgSqjNiHcWWTrhrmUl5BuCBxiZeZjfQwo3pI3EjFw".strip()
     BUCKET_NAME = "news-summary"
-    FILE_NAME = file_name
 
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print(f"📥 Downloading file `{FILE_NAME}` from Supabase bucket `{BUCKET_NAME}`...")
-        content = supabase.storage.from_(BUCKET_NAME).download(FILE_NAME).decode("utf-8")
-        print("✅ File downloaded and decoded successfully.")
-    except Exception as e:
-        print(f"❌ Error downloading file from Supabase: {e}")
+    # ✅ Load from Supabase if content is not provided
+    if content is None and file_name:
+        try:
+            supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+            print(f"📥 Downloading file `{file_name}` from Supabase bucket `{BUCKET_NAME}`...")
+            content = supabase.storage.from_(BUCKET_NAME).download(file_name).decode("utf-8")
+            print("✅ File downloaded and decoded successfully.")
+        except Exception as e:
+            print(f"❌ Error downloading file from Supabase: {e}")
+            return {
+                "error": str(e),
+                "stage": "supabase_download"
+            }
+
+    # ❌ If neither file nor content is provided
+    if content is None:
         return {
-            "error": str(e),
-            "stage": "supabase_download"
+            "error": "No content or file_name provided.",
+            "stage": "input_missing"
         }
 
+    # ✅ Process text content
     lines = [line.strip() for line in content.splitlines() if line.strip()]
 
     analyzer = get_sentiment_analyzer()
@@ -74,7 +83,6 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
             print(f"⚠️ Error analyzing line: {line[:30]}... | {e}")
 
     if not results:
-        print("❌ No valid sentiment results returned.")
         return {
             "error": "All lines failed to analyze or were too short.",
             "stage": "analysis"
@@ -98,6 +106,7 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
         'normalized_sentiment': normalized_sentiment,
         'avg_sentiment_score': avg_sentiment_score
     }
+
 
 
 
