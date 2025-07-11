@@ -11,38 +11,78 @@ BUCKET_NAME = "news-summary"
 FILE_NAME = "generated_text.txt"
 
 def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
+    from supabase import create_client
+    from transformers import pipeline
+
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    # Download file as bytes and decode
-    content = supabase.storage.from_(BUCKET_NAME).download(FILE_NAME).decode("utf-8")
-    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    try:
+        print(f"📥 Downloading file `{file_name}` from Supabase bucket `{BUCKET_NAME}`...")
+        response = supabase.storage.from_(BUCKET_NAME).download(file_name)
+        if response is None:
+            raise Exception("❌ Supabase download returned None. File may not exist.")
+        content = response.decode("utf-8")
+        print("✅ File downloaded and decoded successfully.")
+    except Exception as e:
+        print(f"❌ Download/Decode Error: {e}")
+        return {
+            "error": str(e),
+            "stage": "download"
+        }
 
-    sentiment_analyzer = pipeline(
-        "sentiment-analysis",
-        model="distilbert-base-uncased-finetuned-sst-2-english"
-    )
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    if not lines:
+        print("⚠️ File is empty or only contains whitespace.")
+        return {
+            "error": "File contains no valid lines.",
+            "stage": "parsing"
+        }
+
+    try:
+        print("🤖 Initializing sentiment analysis pipeline...")
+        sentiment_analyzer = pipeline(
+            "sentiment-analysis",
+            model="distilbert-base-uncased-finetuned-sst-2-english"
+        )
+    except Exception as e:
+        print(f"❌ Pipeline Initialization Error: {e}")
+        return {
+            "error": str(e),
+            "stage": "pipeline_init"
+        }
 
     results = []
-
     for line in lines:
         if len(line) < 10:
+            print(f"⏭️ Skipping short line: {line}")
             continue
-        result = sentiment_analyzer(line)[0]
-        results.append({
-            'text': line,
-            'sentiment': result['label'],
-            'score': result['score']
-        })
+        try:
+            result = sentiment_analyzer(line)[0]
+            results.append({
+                'text': line,
+                'sentiment': result['label'],
+                'score': result['score']
+            })
+        except Exception as e:
+            print(f"⚠️ Error analyzing line: {line[:30]}... | {e}")
+
+    if not results:
+        print("❌ No valid sentiment results returned.")
+        return {
+            "error": "All lines failed to analyze or were too short.",
+            "stage": "analysis"
+        }
 
     positive_lines = [r for r in results if r['sentiment'] == 'POSITIVE']
-    positive_ratio = len(positive_lines) / len(results) if results else 0.5
-    avg_sentiment_score = sum(r['score'] for r in results) / len(results) if results else 0.5
+    positive_ratio = len(positive_lines) / len(results)
+    avg_sentiment_score = sum(r['score'] for r in results) / len(results)
     normalized_sentiment = (positive_ratio - 0.5) * 2
 
-    print(f"Overall Sentiment: {'POSITIVE' if positive_ratio > 0.5 else 'NEGATIVE'}")
-    print(f"Positive Ratio: {positive_ratio:.2f}")
-    print(f"Normalized Sentiment: {normalized_sentiment:.2f}")
-    print(f"Average Sentiment Score: {avg_sentiment_score:.2f}")
+    print(f"✅ Sentiment Analysis Complete")
+    print(f"🔍 Overall Sentiment: {'POSITIVE' if positive_ratio > 0.5 else 'NEGATIVE'}")
+    print(f"📊 Positive Ratio: {positive_ratio:.2f}")
+    print(f"📈 Normalized Sentiment: {normalized_sentiment:.2f}")
+    print(f"🔢 Average Sentiment Score: {avg_sentiment_score:.2f}")
 
     return {
         'results': results,
@@ -51,6 +91,7 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
         'normalized_sentiment': normalized_sentiment,
         'avg_sentiment_score': avg_sentiment_score
     }
+
 
 
 
