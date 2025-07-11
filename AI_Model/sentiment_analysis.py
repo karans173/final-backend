@@ -27,41 +27,11 @@ def get_sentiment_analyzer():
             return None
     return sentiment_analyzer
 
-def analyze_text_file_sentiment(file_name: str = None, content: str = None):
-    from supabase import create_client
-    import os
-
-    SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co".strip()
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjEzMDcwMiwiZXhwIjoyMDY3NzA2NzAyfQ.RYVgSqjNiHcWWTrhrmUl5BuCBxiZeZjfQwo3pI3EjFw".strip()
-    BUCKET_NAME = "news-summary"
-
-    # ✅ Load from Supabase if content is not provided
-    if content is None and file_name:
-        try:
-            supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-            print(f"📥 Downloading file `{file_name}` from Supabase bucket `{BUCKET_NAME}`...")
-            content = supabase.storage.from_(BUCKET_NAME).download(file_name).decode("utf-8")
-            print("✅ File downloaded and decoded successfully.")
-        except Exception as e:
-            print(f"❌ Error downloading file from Supabase: {e}")
-            return {
-                "error": str(e),
-                "stage": "supabase_download"
-            }
-
-    # ❌ If neither file nor content is provided
-    if content is None:
-        return {
-            "error": "No content or file_name provided.",
-            "stage": "input_missing"
-        }
-
-    # ✅ Process text content
-    lines = [line.strip() for line in content.splitlines() if line.strip()]
+def analyze_text_file_sentiment(text: str):
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
 
     analyzer = get_sentiment_analyzer()
     if analyzer is None:
-        print("❌ Sentiment analysis pipeline not available.")
         return {
             "error": "Sentiment analyzer could not be initialized.",
             "stage": "pipeline_init"
@@ -70,7 +40,6 @@ def analyze_text_file_sentiment(file_name: str = None, content: str = None):
     results = []
     for line in lines:
         if len(line) < 10:
-            print(f"⏭️ Skipping short line: {line}")
             continue
         try:
             result = analyzer(line)[0]
@@ -80,7 +49,7 @@ def analyze_text_file_sentiment(file_name: str = None, content: str = None):
                 'score': result['score']
             })
         except Exception as e:
-            print(f"⚠️ Error analyzing line: {line[:30]}... | {e}")
+            continue
 
     if not results:
         return {
@@ -93,12 +62,6 @@ def analyze_text_file_sentiment(file_name: str = None, content: str = None):
     avg_sentiment_score = sum(r['score'] for r in results) / len(results)
     normalized_sentiment = (positive_ratio - 0.5) * 2
 
-    print(f"✅ Sentiment Analysis Complete")
-    print(f"🔍 Overall Sentiment: {'POSITIVE' if positive_ratio > 0.5 else 'NEGATIVE'}")
-    print(f"📊 Positive Ratio: {positive_ratio:.2f}")
-    print(f"📈 Normalized Sentiment: {normalized_sentiment:.2f}")
-    print(f"🔢 Average Sentiment Score: {avg_sentiment_score:.2f}")
-
     return {
         'results': results,
         'overall_sentiment': 'POSITIVE' if positive_ratio > 0.5 else 'NEGATIVE',
@@ -106,6 +69,7 @@ def analyze_text_file_sentiment(file_name: str = None, content: str = None):
         'normalized_sentiment': normalized_sentiment,
         'avg_sentiment_score': avg_sentiment_score
     }
+
 
 
 
