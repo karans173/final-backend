@@ -31,8 +31,8 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
     from supabase import create_client
     import os
 
-    SUPABASE_URL = os.getenv("https://rizamamuiwyyplawssvr.supabase.co")
-    SUPABASE_KEY = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjEzMDcwMiwiZXhwIjoyMDY3NzA2NzAyfQ.RYVgSqjNiHcWWTrhrmUl5BuCBxiZeZjfQwo3pI3EjFw")
+    SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjEzMDcwMiwiZXhwIjoyMDY3NzA2NzAyfQ.RYVgSqjNiHcWWTrhrmUl5BuCBxiZeZjfQwo3pI3EjFw"
     BUCKET_NAME = "news-summary"
     FILE_NAME = file_name
 
