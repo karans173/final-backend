@@ -4,51 +4,57 @@ from transformers import pipeline
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+sentiment_analyzer = None
 
 SUPABASE_URL = "https://rizamamuiwyyplawssvr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpemFtYW11aXd5eXBsYXdzc3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzA3MDIsImV4cCI6MjA2NzcwNjcwMn0.Qfno-pgz05Fjs0_K5WKMLdUFtVeg-NuNVoZhPIwLjvg"
 BUCKET_NAME = "news-summary"
 FILE_NAME = "generated_text.txt"
 
+def get_sentiment_analyzer():
+    global sentiment_analyzer
+    if sentiment_analyzer is None:
+        try:
+            print("🤖 Initializing sentiment analysis pipeline...")
+            sentiment_analyzer = pipeline(
+                "sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                local_files_only=True
+            )
+            print("✅ Model pipeline loaded successfully.")
+        except Exception as e:
+            print(f"❌ Pipeline Initialization Error: {e}")
+            return None
+    return sentiment_analyzer
+
 def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
     from supabase import create_client
-    from transformers import pipeline
+    import os
 
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    BUCKET_NAME = "news-summary"
+    FILE_NAME = file_name
 
     try:
-        print(f"📥 Downloading file `{file_name}` from Supabase bucket `{BUCKET_NAME}`...")
-        response = supabase.storage.from_(BUCKET_NAME).download(file_name)
-        if response is None:
-            raise Exception("❌ Supabase download returned None. File may not exist.")
-        content = response.decode("utf-8")
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print(f"📥 Downloading file `{FILE_NAME}` from Supabase bucket `{BUCKET_NAME}`...")
+        content = supabase.storage.from_(BUCKET_NAME).download(FILE_NAME).decode("utf-8")
         print("✅ File downloaded and decoded successfully.")
     except Exception as e:
-        print(f"❌ Download/Decode Error: {e}")
+        print(f"❌ Error downloading file from Supabase: {e}")
         return {
             "error": str(e),
-            "stage": "download"
+            "stage": "supabase_download"
         }
 
     lines = [line.strip() for line in content.splitlines() if line.strip()]
-    if not lines:
-        print("⚠️ File is empty or only contains whitespace.")
-        return {
-            "error": "File contains no valid lines.",
-            "stage": "parsing"
-        }
 
-    try:
-        print("🤖 Initializing sentiment analysis pipeline...")
-        sentiment_analyzer = pipeline(
-            "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english",
-            local_files_only=True
-        )
-    except Exception as e:
-        print(f"❌ Pipeline Initialization Error: {e}")
+    analyzer = get_sentiment_analyzer()
+    if analyzer is None:
+        print("❌ Sentiment analysis pipeline not available.")
         return {
-            "error": str(e),
+            "error": "Sentiment analyzer could not be initialized.",
             "stage": "pipeline_init"
         }
 
@@ -58,7 +64,7 @@ def analyze_text_file_sentiment(file_name: str = "generated_text.txt"):
             print(f"⏭️ Skipping short line: {line}")
             continue
         try:
-            result = sentiment_analyzer(line)[0]
+            result = analyzer(line)[0]
             results.append({
                 'text': line,
                 'sentiment': result['label'],
