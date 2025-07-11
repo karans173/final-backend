@@ -10,6 +10,7 @@ BUCKET_NAME = "news-summary"
 
 def upload_to_supabase_direct(content: str, file_name: str) -> str:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    file_name = file_name.strip()
 
     # Write content to a temporary file
     with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".txt") as tmp:
