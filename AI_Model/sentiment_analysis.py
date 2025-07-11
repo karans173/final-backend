@@ -19,7 +19,7 @@ def get_sentiment_analyzer():
             sentiment_analyzer = pipeline(
                 "sentiment-analysis",
                 model="distilbert-base-uncased-finetuned-sst-2-english",
-                local_files_only=True
+                
             )
             print("✅ Model pipeline loaded successfully.")
         except Exception as e:
